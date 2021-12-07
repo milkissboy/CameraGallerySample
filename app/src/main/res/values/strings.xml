@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">CameraOrGallery</string>
+
+    <string name="permission_read">저장소 권한이 필요</string>
+</resources>
