@@ -19,7 +19,9 @@ import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.core.content.FileProvider
 import com.hyk.cameraorgallery.Logger.d
+import com.hyk.cameraorgallery.Logger.i
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
 
@@ -27,12 +29,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     private val job = Job()
     override val coroutineContext: CoroutineContext
         get() = job + Dispatchers.Main
-
-    // 비동기 종료
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-    }
 
     private lateinit var currentImageUri:Uri
 
@@ -43,11 +39,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     var load: Button? = null
     var loadGallery: Button? = null
 
+    /** 카메라 관련 */
     private val permissionsCamera = arrayOf(
         Manifest.permission.CAMERA
     )
 
-    private val requestPermission =
+    private val requestPermissionCamera =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             for (entry in it.entries) {
                 if (!entry.value) {
@@ -55,7 +52,19 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                     return@registerForActivityResult
                 }
             }
+            dispatchTakePictureIntent()
+        }
 
+    private fun dispatchTakePictureIntent() {
+        val photoUri: Uri? = createTempImageFile().let { file ->
+            FileProvider.getUriForFile(
+                baseContext,
+                baseContext.applicationContext.packageName.toString() + ".fileProvider",
+                file
+            )
+        }
+        photoUri?.let {
+            currentImageUri = it
             Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 putExtra(MediaStore.EXTRA_OUTPUT, currentImageUri)
@@ -65,10 +74,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 }
             }
         }
+        i("load photoUri $photoUri")
+    }
 
     private val getImageFromCapture =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            d("bbb ${it.resultCode} ")
+            d("bbb ${it.resultCode} photoUri $currentImageUri")
             if (it.resultCode == Activity.RESULT_OK) {
                 //val imageBitmap = it.extras.get("data") as Bitmap
                 val bitmap = BitmapFactory.decodeStream(contentResolver?.openInputStream(currentImageUri))
@@ -76,6 +87,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             }
         }
 
+    /** 갤러리 관련 */
     private val permissions = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -118,6 +130,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             }
         }
 
+    // 비동기 종료
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -142,23 +160,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     private fun setupListener() {
         load?.setOnClickListener {
-            /*val photoURI: Uri? = createTempImageFile()?.let { file ->
-                FileProvider.getUriForFile(
-                        baseContext,
-                        baseContext.applicationContext.packageName.toString() + ".fileProvider",
-                        file
-                    )
-                }
-            photoURI?.let {
-                currentImageUri = it
-
-                *//*val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, it)
-                startForResultToLoadImage.launch(intent)*//*
-                requestPermission.launch(permissionsCamera)
-            }*/
-            dispatchTakePictureIntent()
+            requestPermissionCamera.launch(permissionsCamera)
         }
 
         loadGallery?.setOnClickListener {
@@ -172,11 +174,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             }
 
             override fun onStartTrackingTouch(seekbar: SeekBar?) {
-
             }
 
             override fun onStopTrackingTouch(seekbar: SeekBar?) {
-
             }
         })
 
@@ -187,11 +187,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             }
 
             override fun onStartTrackingTouch(seekbar: SeekBar?) {
-
             }
 
             override fun onStopTrackingTouch(seekbar: SeekBar?) {
-
             }
         })
 
@@ -203,30 +201,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             }
 
             override fun onStartTrackingTouch(seekbar: SeekBar?) {
-
             }
 
             override fun onStopTrackingTouch(seekbar: SeekBar?) {
-
             }
         })
-    }
-
-    val REQUEST_IMAGE_CAPTURE = 1
-
-    private fun dispatchTakePictureIntent() {
-        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
-            takePictureIntent.resolveActivity(packageManager)?.also {
-                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
-            }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            val imageBitmap = data?.extras?.get("data") as Bitmap
-            imageView?.setImageBitmap(imageBitmap)
-        }
     }
 }

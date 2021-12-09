@@ -1,9 +1,9 @@
 Camera or gallery Example
 ====================
-1. camera에서 가져오기 
-2. (WIP) FileProvider 에서 uri 가져오기 작업
-3. Gallery에서 가져오기
-4. ImageFilterView 적
+1. camera에서 가져오기 (registerForActivityResult)
+2. FileProvider 에서 uri 가져오기 작업
+3. Gallery에서 가져오기 (registerForActivityResult)
+4. ImageFilterView 적용
 
 Introduction
 ------------
