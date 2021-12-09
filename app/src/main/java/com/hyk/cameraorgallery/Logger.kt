@@ -1,9 +1,8 @@
 package com.hyk.cameraorgallery
 
 import android.util.Log
-import androidx.databinding.ktx.BuildConfig
 
-private const val TAG = "test"
+private const val TAG = "test22"
 
 object Logger {
     /** Log Level Error  */
